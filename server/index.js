@@ -1,6 +1,5 @@
 import 'dotenv/config'
-import annunciRoute from './routes/annunci.js'
-import './lib/supabase.js' 
+import './lib/supabase.js'
 import express from 'express'
 import cors from 'cors'
 
@@ -11,7 +10,6 @@ app.use(cors()) // permetto a tutti i domini di accedere alle mie API
 app.use(express.json()) // per poter leggere il body delle richieste in formato JSON
 
 app.get('/', (req, res) => res.send('Hello World!'))
-app.use('/api/annunci', annunciRoute)
 
 
 
