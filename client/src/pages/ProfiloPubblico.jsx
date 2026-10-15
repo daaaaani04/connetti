@@ -270,7 +270,7 @@ export default function ProfiloPubblico({ sessione }) {
 
                 {haGiaRecensito && (
                   <p className={styles.msgOk} style={{ marginBottom: 16 }}>
-                    ✅ Hai già lasciato una recensione per questo professionista.
+                    Hai già lasciato una recensione per questo professionista.
                   </p>
                 )}
 

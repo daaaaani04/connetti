@@ -17,6 +17,7 @@ export default function Annunci({ sessione }) {
   const [annuncioSelezionato, setAnnuncioSelezionato] = useState(null)
   const [successoOfferta, setSuccessoOfferta] = useState(false)
   const [profilo, setProfilo] = useState(null)
+  const [offerteMie, setOfferteMie] = useState({})  // mappa annuncio_id -> offerta già inviata dal venditore
 
   useEffect(() => {
     async function init() {
@@ -36,6 +37,10 @@ export default function Annunci({ sessione }) {
           .single()
 
         setProfilo(profiloData)
+
+        // carico le offerte già inviate dal venditore, per sapere su quali annunci
+        // esiste già un'offerta (e permetterne la modifica invece di un doppio invio)
+        await caricaOfferteMie(sessione.user.id)
 
         filtriIniziali = {
           comune: profiloData?.comune || '',
@@ -66,6 +71,19 @@ export default function Annunci({ sessione }) {
     const { data } = await query
     setAnnunci(data || [])
     setLoading(false)
+  }
+
+  // carico le offerte del venditore loggato e le indicizzo per annuncio_id,
+  // così da capire a colpo d'occhio su quali annunci ha già proposto
+  async function caricaOfferteMie(userId) {
+    const { data } = await supabase
+      .from('offerte')
+      .select('*')
+      .eq('venditore_id', userId)
+
+    const mappa = {}
+    ;(data || []).forEach(o => { mappa[o.annuncio_id] = o })
+    setOfferteMie(mappa)
   }
 
   function handleFiltro(e) {
@@ -189,7 +207,7 @@ export default function Annunci({ sessione }) {
                         className={styles.btnOfferta}
                         onClick={() => setAnnuncioSelezionato(a)}       /* al click su invia offerta attivo setAnnuncioSelezionato che apre il Form */
                       >
-                        Invia offerta
+                        {offerteMie[a.id] ? 'Modifica offerta' : 'Invia offerta'}
                       </button>
                     )}
                   </div>
@@ -204,10 +222,12 @@ export default function Annunci({ sessione }) {
         <FormOfferta
           annuncio={annuncioSelezionato}
           sessione={sessione}
+          offertaEsistente={offerteMie[annuncioSelezionato.id]}
           onClose={() => setAnnuncioSelezionato(null)}
           onSuccess={() => {
             setAnnuncioSelezionato(null)
             setSuccessoOfferta(true)
+            caricaOfferteMie(sessione.user.id)   // aggiorno la mappa dopo invio/modifica
             setTimeout(() => setSuccessoOfferta(false), 3000)
           }}
         />

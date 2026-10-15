@@ -6,8 +6,9 @@ import styles from './FormOfferta.module.css'
 
 export default function FormOfferta({ annuncio, sessione, onClose, onSuccess, offertaEsistente }) {
   const [form, setForm] = useState({
-    messaggio: '',
-    prezzo: ''
+    // se sto modificando un'offerta esistente prefillo i campi con i suoi dati
+    messaggio: offertaEsistente?.messaggio || '',
+    prezzo: offertaEsistente?.prezzo ?? ''
   })
   const [loading, setLoading] = useState(false)
   const [errore, setErrore] = useState(null)
@@ -22,32 +23,37 @@ export default function FormOfferta({ annuncio, sessione, onClose, onSuccess, of
     setErrore(null)
     setLoading(true)
 
-    if (offertaEsistente) {
-      const { error: deleteError } = await supabase
-        .from('offerte')
-        .delete()
-        .eq('id', offertaEsistente.id)
-
-      if (deleteError) {
-        setLoading(false)
-        return setErrore(deleteError.message)
-      }
+    const datiOfferta = {
+      messaggio: form.messaggio,
+      prezzo: form.prezzo ? parseFloat(form.prezzo) : null
     }
-    
 
-    const { error } = await supabase
-      .from('offerte')
-      .insert({
-        annuncio_id: annuncio.id,
-        venditore_id: sessione.user.id,
-        messaggio: form.messaggio,
-        prezzo: form.prezzo ? parseFloat(form.prezzo) : null
-      })
+    let error
+    if (offertaEsistente) {
+      // aggiorno l'offerta esistente (senza cancellarla, per non perdere la chat
+      // collegata via messaggi.preventivo_id) e la riporto a "inviata": serve a
+      // ri-proporsi, ad esempio dopo un rifiuto
+      const res = await supabase
+        .from('offerte')
+        .update({ ...datiOfferta, stato: 'inviata' })
+        .eq('id', offertaEsistente.id)
+      error = res.error
+    } else {
+      // prima offerta per questo annuncio: la creo
+      const res = await supabase
+        .from('offerte')
+        .insert({
+          annuncio_id: annuncio.id,
+          venditore_id: sessione.user.id,
+          ...datiOfferta
+        })
+      error = res.error
+    }
 
     setLoading(false)
 
     if (error) {
-      // errore unicità — offerta già inviata
+      // errore unicità — offerta già inviata (es. race condition su insert)
       if (error.code === '23505') {
         return setErrore('Hai già inviato un\'offerta per questo annuncio.')
       }
@@ -127,7 +133,7 @@ export default function FormOfferta({ annuncio, sessione, onClose, onSuccess, of
               className={styles.btnPrimary}
               disabled={loading}
             >
-              {loading ? 'Invio...' : 'Invia offerta'}
+              {loading ? 'Invio...' : (offertaEsistente ? 'Aggiorna offerta' : 'Invia offerta')}
             </button>
           </div>
         </form>
