@@ -2,3 +2,7 @@ dist/
 .env
 */.env
 node_modules/
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
