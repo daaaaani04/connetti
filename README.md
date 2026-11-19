@@ -2,7 +2,7 @@
 
 Piattaforma web che mette in contatto **acquirenti** (chi cerca un servizio) e **professionisti** (chi lo offre): l'acquirente pubblica un annuncio, i professionisti inviano preventivi, le due parti si scrivono in chat e a lavoro concluso l'acquirente lascia una recensione.
 
-Progetto sviluppato per il corso di Programmazione Web.
+Progetto universitario di sviluppo web.
 
 ## Funzionalità
 
